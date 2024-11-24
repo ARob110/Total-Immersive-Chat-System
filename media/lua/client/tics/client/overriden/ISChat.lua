@@ -1219,7 +1219,7 @@ local function GenerateRadiosPacketFromListeningRadiosInRange(frequency)
 end
 
 local function RemoveDiscordMessagePrefix(message)
-    local regex = '<@%d*>(.*)'
+    local regex = '<@%d+>(.*)'
     return message:match(regex)
 end
 
@@ -1302,8 +1302,8 @@ ISChat.addLineInChat = function(message, tabID)
         local discordColor = { 88, 101, 242 } -- discord logo color
         local messageWithoutPrefix = RemoveDiscordMessagePrefix(line)
         if messageWithoutPrefix == nil then
-            print('TICS error: failed to remove discord message prefix for message: "' .. line .. '"')
-            return
+            -- for some reason some servers receive discord messages without the @discord-id-of-bot prefix
+            messageWithoutPrefix = line
         end
         if TicsServerSettings and TicsServerSettings['general']
             and TicsServerSettings['general']['discord']
