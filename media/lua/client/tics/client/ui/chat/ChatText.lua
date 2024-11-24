@@ -51,6 +51,10 @@ function ChatText:render()
         local v = self.lines[c]
 
         if self.lineY[c] + self.marginTop + self:getYScroll() >= self:getHeight() then
+            if not self.textHasReachedBottomOnce then
+                self.textHasReachedBottomOnce = true
+                self:scrollToBottom()
+            end
             break
         end
         if self.rgb[c] then
@@ -145,6 +149,8 @@ function ChatText:render()
                         b, self.contentTransparency, self.font)
                 end
             end
+        else
+            self.textHasReachedBottomOnce = true -- text was scrolled already
         end
         c = c + 1
     end
