@@ -162,8 +162,14 @@ function AVoice:update()
 
                 -- Is object already a square or a player? We don't care, they both have getX/Y/Z, we get the square anyway.
                 local square = getSquare(self.object:getX(), self.object:getY(), self.object:getZ())
+                if square == nil then
+                    return -- player just went online and the world is not initialized properly yet
+                end
 
                 self.soundId = self.soundEmitter:playSoundImpl(nextSound.sound, square)
+                if self.soundId == nil then
+                    return -- player just went online and the world is not initialized properly yet
+                end
 
                 -- If it's a character and the one played by the client then we don't want to hear the sound from only one side
                 if self.object.getUsername ~= nil and self.object:getUsername() == getPlayer():getUsername() then
