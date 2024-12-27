@@ -20,6 +20,15 @@ option TICS.BoredomReduction
 	translation = TICS_BoredomReduction,
 }
 
+option TICS.Languages
+{
+	type = boolean,
+	default = false,
+
+	page = TICS,
+	translation = TICS_Languages,
+}
+
 option TICS.BubblePortrait
 {
 	type = enum,

@@ -1,10 +1,10 @@
-local Character = require('tics/shared/utils/Character')
+local Character    = require('tics/shared/utils/Character')
 local RadioManager = require('tics/server/radio/RadioManager')
-local ServerSend = require('tics/server/network/ServerSend')
+local ServerSend   = require('tics/server/network/ServerSend')
 local StringParser = require('tics/shared/utils/StringParser')
-local World = require('tics/shared/utils/World')
+local World        = require('tics/shared/utils/World')
 
-local ChatMessage = {}
+local ChatMessage  = {}
 
 local function PlayersDistance(source, target)
     local stupidDistance = source:DistTo(target:getX(), target:getY())
@@ -200,6 +200,7 @@ local function SetMessageTypeSettings()
         ['options'] = {
             ['showCharacterName'] = SandboxVars.TICS.ShowCharacterName,
             ['boredomReduction'] = SandboxVars.TICS.BoredomReduction,
+            ['languages'] = SandboxVars.TICS.Languages,
             ['verb'] = SandboxVars.TICS.VerbEnabled,
             ['bubble'] = {
                 ['timer'] = SandboxVars.TICS.BubbleTimerInSeconds,
@@ -463,6 +464,7 @@ local function SendRadioPackets(author, player, args, sourceRadioByFrequencies)
         radios = targetRadiosByFrequencies,
         pitch = args.pitch,
         disableVerb = args.disableVerb,
+        language = args.language,
     })
 end
 
@@ -523,6 +525,7 @@ local function SendRadioEmittingPackets(player, args, radioFrequencies)
             color = args.color,
             frequency = frequency,
             disableVerb = args.disableVerb,
+            language = args.language,
         })
     end
 end

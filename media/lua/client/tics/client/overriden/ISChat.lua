@@ -8,6 +8,7 @@ local AvatarManager          = require('tics/client/AvatarManager')
 local AvatarUploadWindow     = require('tics/client/ui/AvatarUploadWindow')
 local AvatarValidationWindow = require('tics/client/ui/AvatarValidationWindow')
 local Character              = require('tics/shared/utils/Character')
+local LanguageManager        = require('tics/client/languages/LanguageManager')
 local FakeRadioPacket        = require('tics/client/FakeRadioPacket')
 local Parser                 = require('tics/client/parser/Parser')
 local PlayerBubble           = require('tics/client/ui/bubble/PlayerBubble')
@@ -47,6 +48,7 @@ ISChat.ticsCommand    = {}
 ISChat.ticsCommand[1] = { name = 'color', command = '/color', shortCommand = nil }
 ISChat.ticsCommand[2] = { name = 'pitch', command = '/pitch', shortCommand = nil }
 ISChat.ticsCommand[3] = { name = 'roll', command = '/roll', shortCommand = nil }
+ISChat.ticsCommand[3] = { name = 'language', command = '/language', shortCommand = '/la' }
 
 
 ISChat.defaultTabStream    = {}
@@ -364,22 +366,23 @@ local function ProcessChatCommand(stream, command)
     if ticsCommand == nil then
         return false
     end
+    local language = LanguageManager:getCurrentLanguage()
     if stream.name == 'yell' then
-        ClientSend.sendChatMessage(command, playerColor, 'yell', pitch, false)
+        ClientSend.sendChatMessage(command, language, playerColor, 'yell', pitch, false)
     elseif stream.name == 'say' then
-        ClientSend.sendChatMessage(command, playerColor, 'say', pitch, false)
+        ClientSend.sendChatMessage(command, language, playerColor, 'say', pitch, false)
     elseif stream.name == 'low' then
-        ClientSend.sendChatMessage(command, playerColor, 'low', pitch, false)
+        ClientSend.sendChatMessage(command, language, playerColor, 'low', pitch, false)
     elseif stream.name == 'whisper' then
-        ClientSend.sendChatMessage(command, playerColor, 'whisper', pitch, false)
+        ClientSend.sendChatMessage(command, language, playerColor, 'whisper', pitch, false)
     elseif stream.name == 'meyell' then
-        ClientSend.sendChatMessage(command, playerColor, 'yell', pitch, true)
+        ClientSend.sendChatMessage(command, language, playerColor, 'yell', pitch, true)
     elseif stream.name == 'mesay' then
-        ClientSend.sendChatMessage(command, playerColor, 'say', pitch, true)
+        ClientSend.sendChatMessage(command, language, playerColor, 'say', pitch, true)
     elseif stream.name == 'melow' then
-        ClientSend.sendChatMessage(command, playerColor, 'low', pitch, true)
+        ClientSend.sendChatMessage(command, language, playerColor, 'low', pitch, true)
     elseif stream.name == 'mewhisper' then
-        ClientSend.sendChatMessage(command, playerColor, 'whisper', pitch, true)
+        ClientSend.sendChatMessage(command, language, playerColor, 'whisper', pitch, true)
     elseif stream.name == 'pm' then
         local targetStart, targetEnd = command:find('^%s*"%a+%s?%a+"')
         if targetStart == nil then
@@ -390,18 +393,18 @@ local function ProcessChatCommand(stream, command)
         end
         local target = command:sub(targetStart, targetEnd)
         local pmBody = command:sub(targetEnd + 2)
-        ClientSend.sendPrivateMessage(pmBody, playerColor, target, pitch)
+        ClientSend.sendPrivateMessage(pmBody, language, playerColor, target, pitch)
         ISChat.instance.chatText.lastChatCommand = ISChat.instance.chatText.lastChatCommand .. target .. ' '
     elseif stream.name == 'faction' then
-        ClientSend.sendChatMessage(command, playerColor, 'faction', pitch, false)
+        ClientSend.sendChatMessage(command, language, playerColor, 'faction', pitch, false)
     elseif stream.name == 'safehouse' then
-        ClientSend.sendChatMessage(command, playerColor, 'safehouse', pitch, false)
+        ClientSend.sendChatMessage(command, language, playerColor, 'safehouse', pitch, false)
     elseif stream.name == 'general' then
-        ClientSend.sendChatMessage(command, playerColor, 'general', pitch, false)
+        ClientSend.sendChatMessage(command, language, playerColor, 'general', pitch, false)
     elseif stream.name == 'admin' then
-        ClientSend.sendChatMessage(command, playerColor, 'admin', pitch, false)
+        ClientSend.sendChatMessage(command, language, playerColor, 'admin', pitch, false)
     elseif stream.name == 'ooc' then
-        ClientSend.sendChatMessage(command, playerColor, 'ooc', pitch, false)
+        ClientSend.sendChatMessage(command, language, playerColor, 'ooc', pitch, false)
     else
         return false
     end
@@ -429,10 +432,11 @@ local function RemoveLeadingSpaces(text)
 end
 
 local function GetArgumentsFromMessage(ticsCommand, message)
-    if #message < #ticsCommand['command'] + 2 then -- command + space + chars
+    local command = message:match('^/%a+')
+    if #message < #command + 2 then -- command + space + chars
         return nil
     end
-    local arguments = message:sub(#ticsCommand['command'] + 2)
+    local arguments = message:sub(#command + 2)
     arguments = RemoveLeadingSpaces(arguments)
     if #arguments == 0 then
         return nil
@@ -500,6 +504,48 @@ local function ProcessRollCommand(arguments)
     return true
 end
 
+local function ProcessLanguageCommand(arguments)
+    if not TicsServerSettings or not TicsServerSettings['options']['languages'] then
+        ISChat.sendErrorToCurrentTab(
+            getText('UI_TICS_Messages_languages_disabled'))
+        return true
+    end
+    if arguments == nil then
+        local knownLanguages = LanguageManager:getKnownLanguages()
+        local knownLanguagesFormatted = ''
+        local first = true
+        for _, languageCode in pairs(knownLanguages) do
+            if not first then
+                knownLanguagesFormatted = knownLanguagesFormatted .. ', '
+            end
+            knownLanguagesFormatted = knownLanguagesFormatted .. languageCode
+            first = false
+        end
+        local currentLanguage = LanguageManager:getCurrentLanguage()
+        local currentLanguageCode = LanguageManager.GetCodeFromLanguage(currentLanguage)
+        local currentLanguageTranslated = LanguageManager.GetLanguageTranslated(currentLanguage)
+        ISChat.sendInfoToCurrentTab(
+            getText('UI_TICS_Messages_current_language',
+                currentLanguageTranslated,
+                currentLanguageCode))
+        ISChat.sendInfoToCurrentTab(getText('UI_TICS_Messages_known_languages', knownLanguagesFormatted))
+        return true
+    end
+    local regex = '^(%a%a) *$'
+    local languageCode = arguments:match(regex)
+    if languageCode == nil then
+        return false
+    end
+    if not LanguageManager:isCodeKnown(languageCode) then
+        ISChat.sendErrorToCurrentTab(getText('UI_TICS_Messages_unknown_language_code', languageCode))
+        return true
+    end
+    LanguageManager:setCurrentLanguageFromCode(languageCode)
+    local languageTranslated = LanguageManager.GetLanguageTranslatedFromCode(languageCode)
+    ISChat.sendInfoToCurrentTab(getText('UI_TICS_Messages_language_set_to', languageTranslated))
+    return true
+end
+
 local function ProcessTicsCommand(ticsCommand, message)
     local arguments = GetArgumentsFromMessage(ticsCommand, message)
     if ticsCommand['name'] == 'color' then
@@ -517,6 +563,12 @@ local function ProcessTicsCommand(ticsCommand, message)
         if ProcessRollCommand(arguments) == false then
             ISChat.sendErrorToCurrentTab(
                 'roll command expects the format: "/roll xdy" with x and y numbers and x from 1 to 20')
+            return false
+        end
+    elseif ticsCommand['name'] == 'language' then
+        if ProcessLanguageCommand(arguments) == false then
+            ISChat.sendErrorToCurrentTab(
+                'language command expects the format: "/language en" with "en" the language code')
             return false
         end
     end
@@ -570,6 +622,15 @@ local function BuildChannelPrefixString(channel)
     return StringBuilder.BuildBracketColorString(color) .. '[' .. channel .. '] '
 end
 
+
+local function BuildLanguagePrefixString(languageCode)
+    if languageCode == nil then
+        return ''
+    end
+    local color = { 162, 162, 185 }
+    return StringBuilder.BuildBracketColorString(color) .. '(' .. languageCode .. ') '
+end
+
 local function FontStringToEnum(fontString)
     if fontString == 'small' then
         return UIFont.NewSmall
@@ -591,14 +652,21 @@ function ISChat:updateChatPrefixSettings()
         chatText.defaultFont = FontStringToEnum(self.chatFont or 'medium')
         for i, msg in ipairs(chatText.chatTextRawLines) do
             self.chatFont = self.chatFont or 'medium'
-            local line = StringBuilder.BuildFontSizeString(self.chatFont)
-            if self.showTimestamp then
-                line = line .. StringBuilder.BuildTimePrefixString(msg.time)
-            end
-            if self.showTitle then
-                line = line .. BuildChannelPrefixString(msg.channel)
-            end
-            line = line .. msg.line .. StringBuilder.BuildNewLine()
+            -- local line = StringBuilder.BuildFontSizeString(self.chatFont)
+            -- if self.showTimestamp then
+            --     line = line .. StringBuilder.BuildTimePrefixString(msg.time)
+            -- end
+            -- if self.showTitle then
+            --     line = line .. BuildChannelPrefixString(msg.channel)
+            -- end
+            -- if TicsServerSettings and TicsServerSettings['options']['languages'] and msg.language ~= nil and msg.language ~= LanguageManager.DefaultLanguage then
+            --     local languageCode = LanguageManager.GetCodeFromLanguage(msg.language)
+            --     line = line .. BuildLanguagePrefixString(languageCode)
+            -- end
+            local showLanguage = TicsServerSettings and TicsServerSettings['options']['languages']
+            local line = BuildChatMessage(self.chatFont, self.showTimestamp, self.showTitle, showLanguage, msg.language,
+                msg.line, msg.time, msg.channel)
+            line = line .. StringBuilder.BuildNewLine()
             table.insert(chatText.chatTextLines, line)
             if i == #chatText.chatTextRawLines then
                 line = string.gsub(line, " <LINE> $", "")
@@ -703,13 +771,17 @@ function BuildMessageFromPacket(type, message, name, playerColor, frequency, dis
     return formatedMessage, parsedMessage
 end
 
-function BuildChatMessage(fontSize, showTimestamp, showTitle, rawMessage, time, channel)
+function BuildChatMessage(fontSize, showTimestamp, showTitle, showLanguage, language, rawMessage, time, channel)
     local line = StringBuilder.BuildFontSizeString(fontSize)
-    if showTimestamp then
+    if showTimestamp and time then
         line = line .. StringBuilder.BuildTimePrefixString(time)
     end
     if showTitle and channel ~= nil then
         line = line .. BuildChannelPrefixString(channel)
+    end
+    if showLanguage and language and language ~= LanguageManager.DefaultLanguage then
+        local languageCode = LanguageManager.GetCodeFromLanguage(language)
+        line = line .. BuildLanguagePrefixString(languageCode)
     end
     line = line .. rawMessage
     return line
@@ -842,7 +914,7 @@ local function GetStreamFromType(type)
     return nil
 end
 
-local function AddMessageToTab(tabID, time, formattedMessage, line, channel)
+local function AddMessageToTab(tabID, language, time, formattedMessage, line, channel)
     if not ISChat.instance.chatText then
         ISChat.instance.chatText = ISChat.instance.defaultTab
         ISChat.instance:onActivateView()
@@ -855,6 +927,7 @@ local function AddMessageToTab(tabID, time, formattedMessage, line, channel)
             time = time,
             line = formattedMessage,
             channel = channel,
+            language = language,
         })
     local chatTextRawLinesSize = #chatText.chatTextRawLines
     local maxRawMessages = chatText.maxLines
@@ -943,7 +1016,7 @@ function ISChat.onDiceResult(author, characterName, diceCount, diceType, addCoun
     ISChat.sendInfoToCurrentTab(message)
 end
 
-function ISChat.onMessagePacket(type, author, characterName, message, color, hideInChat, target, isFromDiscord,
+function ISChat.onMessagePacket(type, author, characterName, message, language, color, hideInChat, target, isFromDiscord,
                                 voicePitch, disableVerb)
     if author ~= getPlayer():getUsername() then
         ReduceBoredom()
@@ -952,24 +1025,29 @@ function ISChat.onMessagePacket(type, author, characterName, message, color, hid
     if TicsServerSettings and not TicsServerSettings['options']['showCharacterName'] then
         name = author
     end
-    local formattedMessage, parsedMessage = BuildMessageFromPacket(type, message, name, color, nil, disableVerb)
     if type == 'pm' and target:lower() == getPlayer():getUsername():lower() then
         ISChat.instance.lastPrivateMessageAuthor = author
     end
     ISChat.instance.chatFont = ISChat.instance.chatFont or 'medium'
+    local updatedMessage = message
+    local showLanguage = TicsServerSettings and TicsServerSettings['options']['languages']
     if not isFromDiscord and voicePitch ~= nil then
-        CreatePlayerBubble(author, message, BuildColorFromMessageType(type), voicePitch)
+        if showLanguage and not LanguageManager:isKnown(language) then
+            updatedMessage = LanguageManager:getRandomMessage(message)
+        end
+        CreatePlayerBubble(author, updatedMessage, BuildColorFromMessageType(type), voicePitch)
     end
+    local formattedMessage, parsedMessage = BuildMessageFromPacket(type, updatedMessage, name, color, nil, disableVerb)
     local time = Calendar.getInstance():getTimeInMillis()
     local line = BuildChatMessage(ISChat.instance.chatFont, ISChat.instance.showTimestamp, ISChat.instance.showTitle,
-        formattedMessage, time, type)
+        showLanguage, language, formattedMessage, time, type)
     local stream = GetStreamFromType(type)
     if stream == nil then
         print('TICS error: onMessagePacket: stream not found')
         return
     end
     if not hideInChat then
-        AddMessageToTab(stream['tabID'], time, formattedMessage, line, stream['name'])
+        AddMessageToTab(stream['tabID'], language, time, formattedMessage, line, stream['name'])
     end
 end
 
@@ -996,7 +1074,7 @@ function ISChat.onServerMessage(message)
     local parsedMessage = Parser.ParseTicsMessage(message, color, 20, 200)
     local line = BuildChatMessage(ISChat.instance.chatFont, ISChat.instance.showTimestamp, ISChat.instance.showTitle,
         parsedMessage.body, time, 'server')
-    AddMessageToTab(stream['tabID'], time, parsedMessage.body, line, 'server')
+    AddMessageToTab(stream['tabID'], nil, time, parsedMessage.body, line, 'server')
 end
 
 local function CreateSquaresRadiosBubbles(message, messageColor, squaresInfo, voicePitch)
@@ -1111,7 +1189,7 @@ function ISChat.onDiscordPacket(message)
     processGeneralMessage(message)
 end
 
-function ISChat.onRadioEmittingPacket(type, author, characterName, message, color, frequency, disableVerb)
+function ISChat.onRadioEmittingPacket(type, author, characterName, message, language, color, frequency, disableVerb)
     local time = Calendar.getInstance():getTimeInMillis()
     local stream = GetStreamFromType(type)
     if stream == nil then
@@ -1125,10 +1203,10 @@ function ISChat.onRadioEmittingPacket(type, author, characterName, message, colo
     local formattedMessage, parsedMessages = BuildMessageFromPacket(type, message, name, color, frequency, disableVerb)
     local line = BuildChatMessage(ISChat.instance.chatFont, ISChat.instance.showTimestamp, ISChat.instance.showTitle,
         formattedMessage, time, type)
-    AddMessageToTab(stream['tabID'], time, formattedMessage, line, stream['name'])
+    AddMessageToTab(stream['tabID'], language, time, formattedMessage, line, stream['name'])
 end
 
-function ISChat.onRadioPacket(type, author, characterName, message, color, radiosInfo, voicePitch, disableVerb)
+function ISChat.onRadioPacket(type, author, characterName, message, language, color, radiosInfo, voicePitch, disableVerb)
     local time = Calendar.getInstance():getTimeInMillis()
     local stream = GetStreamFromType(type)
     if stream == nil then
@@ -1144,20 +1222,26 @@ function ISChat.onRadioPacket(type, author, characterName, message, color, radio
     if TicsServerSettings and not TicsServerSettings['options']['showCharacterName'] then
         name = author
     end
+    local updatedMessage = message
+    local showLanguage = TicsServerSettings and TicsServerSettings['options']['languages']
     for frequency, radios in pairs(radiosInfo) do
-        local formattedMessage, parsedMessages = BuildMessageFromPacket(type, message, name, color, frequency,
+        if showLanguage and not LanguageManager:isKnown(language) then
+            updatedMessage = LanguageManager:getRandomMessage(message)
+        end
+        local messageColor = BuildColorFromMessageType(type)
+        CreateSquaresRadiosBubbles(updatedMessage, messageColor, radios['squares'], voicePitch)
+        CreatePlayersRadiosBubbles(updatedMessage, messageColor, radios['players'], voicePitch)
+        CreateVehiclesRadiosBubbles(updatedMessage, messageColor, radios['vehicles'], voicePitch)
+
+        local formattedMessage, parsedMessages = BuildMessageFromPacket(type, updatedMessage, name, color, frequency,
             disableVerb)
         local line = BuildChatMessage(ISChat.instance.chatFont, ISChat.instance.showTimestamp, ISChat.instance.showTitle,
-            formattedMessage, time, type)
-        local messageColor = BuildColorFromMessageType(type)
-        CreateSquaresRadiosBubbles(message, messageColor, radios['squares'], voicePitch)
-        CreatePlayersRadiosBubbles(message, messageColor, radios['players'], voicePitch)
-        CreateVehiclesRadiosBubbles(message, messageColor, radios['vehicles'], voicePitch)
+            showLanguage, language, formattedMessage, time, type)
         -- a special packet is making sure the author always has a radio feedback in the chat
         -- useful in case the listening range and emitting range of the radio differs
         -- this is to avoid any confusion from players thinking the radios mights not work
         if author ~= playerName then
-            AddMessageToTab(stream['tabID'], time, formattedMessage, line, stream['name'])
+            AddMessageToTab(stream['tabID'], language, time, formattedMessage, line, stream['name'])
         end
     end
 end
@@ -1166,9 +1250,9 @@ function ISChat.sendInfoToCurrentTab(message)
     local time = Calendar.getInstance():getTimeInMillis()
     local formattedMessage = StringBuilder.BuildBracketColorString({ 70, 70, 255 }) .. message
     local line = BuildChatMessage(ISChat.instance.chatFont, ISChat.instance.showTimestamp, false,
-        formattedMessage, time, nil)
+        false, nil, formattedMessage, time, nil)
     local tabID = ISChat.defaultTabStream[ISChat.instance.currentTabID]['tabID']
-    AddMessageToTab(tabID, time, formattedMessage, line, nil)
+    AddMessageToTab(tabID, nil, time, formattedMessage, line, nil)
 end
 
 function ISChat.sendErrorToCurrentTab(message)
@@ -1176,9 +1260,9 @@ function ISChat.sendErrorToCurrentTab(message)
     local formattedMessage = StringBuilder.BuildBracketColorString({ 255, 40, 40 }) ..
         'error: ' .. StringBuilder.BuildBracketColorString({ 255, 70, 70 }) .. message
     local line = BuildChatMessage(ISChat.instance.chatFont, ISChat.instance.showTimestamp, false,
-        formattedMessage, time, nil)
+        false, nil, formattedMessage, time, nil)
     local tabID = ISChat.defaultTabStream[ISChat.instance.currentTabID]['tabID']
-    AddMessageToTab(tabID, time, formattedMessage, line, nil)
+    AddMessageToTab(tabID, nil, time, formattedMessage, line, nil)
 end
 
 function ISChat.onChatErrorPacket(type, message)
@@ -1186,7 +1270,7 @@ function ISChat.onChatErrorPacket(type, message)
     local formattedMessage = StringBuilder.BuildBracketColorString({ 255, 50, 50 }) ..
         'error: ' .. StringBuilder.BuildBracketColorString({ 255, 60, 60 }) .. message
     local line = BuildChatMessage(ISChat.instance.chatFont, ISChat.instance.showTimestamp, ISChat.instance.showTitle,
-        formattedMessage, time, type)
+        false, nil, formattedMessage, time, type)
     local stream
     if type == nil then
         stream = ISChat.defaultTabStream[ISChat.instance.currentTabID]
@@ -1196,7 +1280,7 @@ function ISChat.onChatErrorPacket(type, message)
             stream = ISChat.defaultTabStream[ISChat.instance.currentTabID]
         end
     end
-    AddMessageToTab(stream['tabID'], time, formattedMessage, line)
+    AddMessageToTab(stream['tabID'], nil, time, formattedMessage, line)
 end
 
 local function GetMessageType(message)
@@ -1248,6 +1332,7 @@ ISChat.addLineInChat = function(message, tabID)
             nil,
             nil,
             messageWithoutColorPrefix,
+            'en',
             color,
             {}, -- todo find a way to locate the radio
             message:getRadioChannel(),
@@ -1258,11 +1343,15 @@ ISChat.addLineInChat = function(message, tabID)
     end
 
     if messageType == 'Local' then -- when pressing Q to shout
+        local player = World.getPlayerByUsername(message:getAuthor())
+        local firstName, lastName = Character.getFirstAndLastName(player)
+        local characterName = firstName .. ' ' .. lastName
         ISChat.onMessagePacket(
             'yell',
             message:getAuthor(),
-            message:getAuthor(),
+            characterName,
             line,
+            LanguageManager.DefaultLanguage,
             { 255, 255, 255 },
             TicsServerSettings and TicsServerSettings['options'] and
             TicsServerSettings['options']['hideCallout'] or nil,
@@ -1314,6 +1403,7 @@ ISChat.addLineInChat = function(message, tabID)
                 message:getAuthor(),
                 message:getAuthor(),
                 messageWithoutPrefix,
+                'en',
                 discordColor,
                 false,
                 nil,
@@ -1335,6 +1425,7 @@ ISChat.addLineInChat = function(message, tabID)
                         message:getAuthor(),
                         message:getAuthor(),
                         messageWithoutPrefix,
+                        'en',
                         discordColor,
                         radiosInfo,
                         1.15,
@@ -1582,6 +1673,9 @@ local function UpdateInfoWindow()
     info = info .. getText('SurvivalGuide_TICS_Color')
     info = info .. getText('SurvivalGuide_TICS_Pitch')
     info = info .. getText('SurvivalGuide_TICS_Roll')
+    if TicsServerSettings['options']['languages'] then
+        info = info .. getText('SurvivalGuide_TICS_Languages')
+    end
     ISChat.instance:setInfo(info)
 end
 

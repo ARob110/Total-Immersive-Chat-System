@@ -5,19 +5,19 @@ local ClientRecv = {}
 
 ClientRecv['ChatMessage'] = function(args)
     ISChat.onMessagePacket(args['type'], args['author'], args['characterName'],
-        args['message'], args['color'], args['hideInChat'],
+        args['message'], args['language'], args['color'], args['hideInChat'],
         args['target'], false, args['pitch'], args['disableVerb'])
 end
 
 ClientRecv['RadioMessage'] = function(args)
     ISChat.onRadioPacket(
-        args['type'], args['author'], args['characterName'], args['message'], args['color'],
+        args['type'], args['author'], args['characterName'], args['message'], args['language'], args['color'],
         args['radios'], args['pitch'], args['disableVerb'])
 end
 
 ClientRecv['RadioEmittingMessage'] = function(args)
     ISChat.onRadioEmittingPacket(
-        args['type'], args['author'], args['characterName'], args['message'], args['color'],
+        args['type'], args['author'], args['characterName'], args['message'], args['language'], args['color'],
         args['frequency'], args['disableVerb'])
 end
 

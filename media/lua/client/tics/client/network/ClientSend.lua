@@ -11,13 +11,14 @@ local function FormatCharacterName(player)
     return first .. ' ' .. last
 end
 
-function ClientSend.sendChatMessage(message, playerColor, type, pitch, disableVerb)
+function ClientSend.sendChatMessage(message, language, playerColor, type, pitch, disableVerb)
     if not isClient() then return end
     local player = getPlayer()
     ClientSendCommand('ChatMessage', {
         author = player:getUsername(),
         characterName = FormatCharacterName(player),
         message = message,
+        language = language,
         type = type,
         color = playerColor,
         pitch = pitch,
@@ -25,13 +26,14 @@ function ClientSend.sendChatMessage(message, playerColor, type, pitch, disableVe
     })
 end
 
-function ClientSend.sendPrivateMessage(message, playerColor, target, pitch)
+function ClientSend.sendPrivateMessage(message, language, playerColor, target, pitch)
     if not isClient() then return end
     local player = getPlayer()
     ClientSendCommand('ChatMessage', {
         author = getPlayer():getUsername(),
         characterName = FormatCharacterName(player),
         message = message,
+        language = language,
         type = 'pm',
         target = target,
         color = playerColor,

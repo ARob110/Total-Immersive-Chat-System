@@ -1,3 +1,6 @@
+local LanguageManager = require('tics/client/languages/LanguageManager')
+
+
 local AVoice = {}
 
 local Phonemes = {
@@ -98,8 +101,18 @@ local Phonemes = {
     },
 }
 
+local Alphabet = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+    'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z' }
+
 local function GetPhoneme(nextLetters)
     local firstLetter = nextLetters:sub(1, 1)
+    for _, c in pairs(LanguageManager.UnknownCharacters) do
+        if c == firstLetter then
+            local letterId = ZombRand(26 - 1) + 1
+            local randomLetter = Alphabet[letterId]
+            return Phonemes[randomLetter][1]
+        end
+    end
     local letterPhonemes = Phonemes[firstLetter]
     if letterPhonemes == nil then
         return nil
@@ -225,10 +238,14 @@ function AVoice:createSoundTable(soundPrefix)
                 isFirstWordLetter = false
                 if #phoneme == 1 or phoneme == 'OO' then
                     local identicalLetters = nextLetters:match('^(' .. phoneme:sub(1, 1) .. '+)')
-                    assert(identicalLetters ~= nil,
-                        'failure: identicalLetters should never be null at this point for phoneme "' ..
-                        phoneme .. '" and nextLetters "' .. nextLetters .. '"')
-                    index = index + #identicalLetters
+                    -- assert(identicalLetters ~= nil,
+                    --     'failure: identicalLetters should never be null at this point for phoneme "' ..
+                    --     phoneme .. '" and nextLetters "' .. nextLetters .. '"')
+                    if identicalLetters ~= nil then
+                        index = index + #identicalLetters
+                    else
+                        index = index + #phoneme
+                    end
                 else
                     index = index + #phoneme
                 end
