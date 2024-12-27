@@ -202,6 +202,7 @@ local function SetMessageTypeSettings()
             ['boredomReduction'] = SandboxVars.TICS.BoredomReduction,
             ['languages'] = SandboxVars.TICS.Languages,
             ['verb'] = SandboxVars.TICS.VerbEnabled,
+            ['capitalize'] = SandboxVars.TICS.Capitalize,
             ['bubble'] = {
                 ['timer'] = SandboxVars.TICS.BubbleTimerInSeconds,
                 ['opacity'] = SandboxVars.TICS.BubbleOpacity,

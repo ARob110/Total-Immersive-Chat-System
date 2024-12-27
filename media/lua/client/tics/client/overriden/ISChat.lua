@@ -1016,6 +1016,15 @@ function ISChat.onDiceResult(author, characterName, diceCount, diceType, addCoun
     ISChat.sendInfoToCurrentTab(message)
 end
 
+local function CapitalizeAndPonctuate(message)
+    message = message:gsub("^%l", string.upper)
+    local lastChar = string.sub(message, message:len())
+    if not (lastChar == "." or lastChar == "!" or lastChar == "?") then
+        message = message .. "."
+    end
+    return message
+end
+
 function ISChat.onMessagePacket(type, author, characterName, message, language, color, hideInChat, target, isFromDiscord,
                                 voicePitch, disableVerb)
     if author ~= getPlayer():getUsername() then
@@ -1025,15 +1034,19 @@ function ISChat.onMessagePacket(type, author, characterName, message, language, 
     if TicsServerSettings and not TicsServerSettings['options']['showCharacterName'] then
         name = author
     end
+
+    local updatedMessage = message
+    if TicsServerSettings ~= nil and TicsServerSettings['options']['capitalize'] == true then
+        updatedMessage = CapitalizeAndPonctuate(updatedMessage)
+    end
     if type == 'pm' and target:lower() == getPlayer():getUsername():lower() then
         ISChat.instance.lastPrivateMessageAuthor = author
     end
     ISChat.instance.chatFont = ISChat.instance.chatFont or 'medium'
-    local updatedMessage = message
     local showLanguage = TicsServerSettings and TicsServerSettings['options']['languages']
     if not isFromDiscord and voicePitch ~= nil then
         if showLanguage and not LanguageManager:isKnown(language) then
-            updatedMessage = LanguageManager:getRandomMessage(message)
+            updatedMessage = LanguageManager:getRandomMessage(updatedMessage)
         end
         CreatePlayerBubble(author, updatedMessage, BuildColorFromMessageType(type), voicePitch)
     end
@@ -1200,7 +1213,12 @@ function ISChat.onRadioEmittingPacket(type, author, characterName, message, lang
     if TicsServerSettings and not TicsServerSettings['options']['showCharacterName'] then
         name = author
     end
-    local formattedMessage, parsedMessages = BuildMessageFromPacket(type, message, name, color, frequency, disableVerb)
+    local cleanMessage = message
+    if TicsServerSettings ~= nil and TicsServerSettings['options']['capitalize'] == true then
+        cleanMessage = CapitalizeAndPonctuate(message)
+    end
+    local formattedMessage, parsedMessages = BuildMessageFromPacket(type, cleanMessage, name, color, frequency,
+        disableVerb)
     local line = BuildChatMessage(ISChat.instance.chatFont, ISChat.instance.showTimestamp, ISChat.instance.showTitle,
         formattedMessage, time, type)
     AddMessageToTab(stream['tabID'], language, time, formattedMessage, line, stream['name'])
@@ -1223,10 +1241,13 @@ function ISChat.onRadioPacket(type, author, characterName, message, language, co
         name = author
     end
     local updatedMessage = message
+    if TicsServerSettings ~= nil and TicsServerSettings['options']['capitalize'] == true then
+        updatedMessage = CapitalizeAndPonctuate(updatedMessage)
+    end
     local showLanguage = TicsServerSettings and TicsServerSettings['options']['languages']
     for frequency, radios in pairs(radiosInfo) do
         if showLanguage and not LanguageManager:isKnown(language) then
-            updatedMessage = LanguageManager:getRandomMessage(message)
+            updatedMessage = LanguageManager:getRandomMessage(updatedMessage)
         end
         local messageColor = BuildColorFromMessageType(type)
         CreateSquaresRadiosBubbles(updatedMessage, messageColor, radios['squares'], voicePitch)
