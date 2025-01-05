@@ -652,17 +652,6 @@ function ISChat:updateChatPrefixSettings()
         chatText.defaultFont = FontStringToEnum(self.chatFont or 'medium')
         for i, msg in ipairs(chatText.chatTextRawLines) do
             self.chatFont = self.chatFont or 'medium'
-            -- local line = StringBuilder.BuildFontSizeString(self.chatFont)
-            -- if self.showTimestamp then
-            --     line = line .. StringBuilder.BuildTimePrefixString(msg.time)
-            -- end
-            -- if self.showTitle then
-            --     line = line .. BuildChannelPrefixString(msg.channel)
-            -- end
-            -- if TicsServerSettings and TicsServerSettings['options']['languages'] and msg.language ~= nil and msg.language ~= LanguageManager.DefaultLanguage then
-            --     local languageCode = LanguageManager.GetCodeFromLanguage(msg.language)
-            --     line = line .. BuildLanguagePrefixString(languageCode)
-            -- end
             local showLanguage = TicsServerSettings and TicsServerSettings['options']['languages']
             local line = BuildChatMessage(self.chatFont, self.showTimestamp, self.showTitle, showLanguage, msg.language,
                 msg.line, msg.time, msg.channel)
@@ -1087,7 +1076,7 @@ function ISChat.onServerMessage(message)
     end
     local parsedMessage = Parser.ParseTicsMessage(message, color, 20, 200)
     local line = BuildChatMessage(ISChat.instance.chatFont, ISChat.instance.showTimestamp, ISChat.instance.showTitle,
-        parsedMessage.body, time, 'server')
+        false, nil, parsedMessage.body, time, 'server')
     AddMessageToTab(stream['tabID'], nil, time, parsedMessage.body, line, 'server')
 end
 
