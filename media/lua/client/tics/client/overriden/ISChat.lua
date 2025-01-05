@@ -1044,7 +1044,8 @@ function ISChat.onMessagePacket(type, author, characterName, message, language, 
     end
     ISChat.instance.chatFont = ISChat.instance.chatFont or 'medium'
     local showLanguage = TicsServerSettings and TicsServerSettings['options']['languages']
-    if not isFromDiscord and voicePitch ~= nil then
+    local showBubble = TicsServerSettings and TicsServerSettings[type] and TicsServerSettings[type]['bubble']
+    if not isFromDiscord and voicePitch ~= nil and showBubble then
         if showLanguage and not LanguageManager:isKnown(language) then
             updatedMessage = LanguageManager:getRandomMessage(updatedMessage)
         end

@@ -175,26 +175,24 @@ function AVoice:update()
 
                 -- Is object already a square or a player? We don't care, they both have getX/Y/Z, we get the square anyway.
                 local square = getSquare(self.object:getX(), self.object:getY(), self.object:getZ())
-                if square == nil then
-                    return -- player just went online and the world is not initialized properly yet
-                end
+                if square ~= nil then -- false when player just went online and the world is not initialized properly yet or the player is too far
+                    self.soundId = self.soundEmitter:playSoundImpl(nextSound.sound, square)
+                    if self.soundId == nil then
+                        return -- player just went online and the world is not initialized properly yet
+                    end
 
-                self.soundId = self.soundEmitter:playSoundImpl(nextSound.sound, square)
-                if self.soundId == nil then
-                    return -- player just went online and the world is not initialized properly yet
-                end
+                    -- If it's a character and the one played by the client then we don't want to hear the sound from only one side
+                    if self.object.getUsername ~= nil and self.object:getUsername() == getPlayer():getUsername() then
+                        self.soundEmitter:set3D(self.soundId, false)
+                    end
 
-                -- If it's a character and the one played by the client then we don't want to hear the sound from only one side
-                if self.object.getUsername ~= nil and self.object:getUsername() == getPlayer():getUsername() then
-                    self.soundEmitter:set3D(self.soundId, false)
+                    local updatePitchVariation = (ZombRand(80) - 40) / 1000
+                    self.pitchVariation = math.min(
+                        math.max(self.pitchVariation + updatePitchVariation, MIN_PITCH_VARIATION),
+                        MAX_PITCH_VARIATION)
+                    self.soundEmitter:setPitch(self.soundId, self.pitch + self.pitchVariation)
+                    soundPlayed = true
                 end
-
-                local updatePitchVariation = (ZombRand(80) - 40) / 1000
-                self.pitchVariation = math.min(
-                    math.max(self.pitchVariation + updatePitchVariation, MIN_PITCH_VARIATION),
-                    MAX_PITCH_VARIATION)
-                self.soundEmitter:setPitch(self.soundId, self.pitch + self.pitchVariation)
-                soundPlayed = true
             end
             self.nextSoundTableIndex = self.nextSoundTableIndex + 1
         end

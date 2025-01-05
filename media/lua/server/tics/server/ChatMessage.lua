@@ -117,6 +117,7 @@ local function SetMessageTypeSettings()
             ['color'] = GetColorSandbox('Whisper'),
             ['radio'] = true,
             ['aliveOnly'] = true,
+            ['bubble'] = true,
         },
         ['low'] = {
             ['range'] = SandboxVars.TICS.LowRange,
@@ -125,6 +126,7 @@ local function SetMessageTypeSettings()
             ['color'] = GetColorSandbox('Low'),
             ['radio'] = true,
             ['aliveOnly'] = true,
+            ['bubble'] = true,
         },
         ['say'] = {
             ['range'] = SandboxVars.TICS.SayRange,
@@ -133,6 +135,7 @@ local function SetMessageTypeSettings()
             ['color'] = GetColorSandbox('Say'),
             ['radio'] = true,
             ['aliveOnly'] = true,
+            ['bubble'] = true,
         },
         ['yell'] = {
             ['range'] = SandboxVars.TICS.YellRange,
@@ -141,6 +144,7 @@ local function SetMessageTypeSettings()
             ['color'] = GetColorSandbox('Yell'),
             ['radio'] = true,
             ['aliveOnly'] = true,
+            ['bubble'] = true,
         },
         ['pm'] = {
             ['range'] = -1,
@@ -149,6 +153,7 @@ local function SetMessageTypeSettings()
             ['color'] = GetColorSandbox('PrivateMessage'),
             ['radio'] = false,
             ['aliveOnly'] = true,
+            ['bubble'] = false,
         },
         ['faction'] = {
             ['range'] = -1,
@@ -157,6 +162,7 @@ local function SetMessageTypeSettings()
             ['color'] = GetColorSandbox('FactionMessage'),
             ['radio'] = false,
             ['aliveOnly'] = true,
+            ['bubble'] = false,
         },
         ['safehouse'] = {
             ['range'] = -1,
@@ -165,6 +171,7 @@ local function SetMessageTypeSettings()
             ['color'] = GetColorSandbox('SafeHouseMessage'),
             ['radio'] = false,
             ['aliveOnly'] = true,
+            ['bubble'] = false,
         },
         ['general'] = {
             ['range'] = -1,
@@ -174,6 +181,7 @@ local function SetMessageTypeSettings()
             ['radio'] = false,
             ['aliveOnly'] = true,
             ['discord'] = SandboxVars.TICS.GeneralDiscordEnabled,
+            ['bubble'] = false,
         },
         ['admin'] = {
             ['range'] = -1,
@@ -182,6 +190,7 @@ local function SetMessageTypeSettings()
             ['color'] = GetColorSandbox('AdminMessage'),
             ['radio'] = false,
             ['aliveOnly'] = false,
+            ['bubble'] = false,
         },
         ['ooc'] = {
             ['range'] = SandboxVars.TICS.OutOfCharacterMessageRange,
