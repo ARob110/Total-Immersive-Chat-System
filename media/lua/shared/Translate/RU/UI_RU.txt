@@ -1,8 +1,8 @@
 Sandbox_RU = {
-    UI_TICS_chat_enable_voices  = "Р’РєР»СЋС‡РёС‚СЊ РіРѕР»РѕСЃР°",
-    UI_TICS_chat_disable_voices = "Р’С‹РєР»СЋС‡РёС‚СЊ РіРѕР»РѕСЃР°",
-    UI_TICS_enable_radio_icon   = "РџРѕРєР°Р·Р°С‚СЊ РёРєРѕРЅРєСѓ СЂР°РґРёРѕ",
-    UI_TICS_disable_radio_icon  = "РЎРєСЂС‹С‚СЊ РёРєРѕРЅРєСѓ СЂР°РґРёРѕ",
-    UI_TICS_enable_portrait     = "РџРѕРєР°Р·Р°С‚СЊ РїРѕСЂС‚СЂРµС‚ РІ РїСѓР·С‹СЂСЊРєРµ",
-    UI_TICS_disable_portrait    = "РЎРєСЂС‹С‚СЊ РїРѕСЂС‚СЂРµС‚ РІ РїСѓР·С‹СЂСЊРєРµ",
+    UI_TICS_chat_enable_voices  = "Включить голоса",
+    UI_TICS_chat_disable_voices = "Выключить голоса",
+    UI_TICS_enable_radio_icon   = "Показать иконку радио",
+    UI_TICS_disable_radio_icon  = "Скрыть иконку радио",
+    UI_TICS_enable_portrait     = "Показать портрет в пузырьке",
+    UI_TICS_disable_portrait    = "Скрыть портрет в пузырьке",
 }
