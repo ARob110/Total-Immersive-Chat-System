@@ -776,7 +776,7 @@ function BuildChatMessage(fontSize, showTimestamp, showTitle, showLanguage, lang
     return line
 end
 
-function CreatePlayerBubble(author, message, color, voicePitch)
+function CreatePlayerBubble(author, message, color, voiceEnabled, voicePitch)
     ISChat.instance.bubble = ISChat.instance.bubble or {}
     ISChat.instance.typingDots = ISChat.instance.typingDots or {}
     if author == nil then
@@ -797,7 +797,7 @@ function CreatePlayerBubble(author, message, color, voicePitch)
     local portrait = (TicsServerSettings and ISChat.instance.isPortraitEnabled and TicsServerSettings['options']['portrait'])
         or 1
     local bubble = PlayerBubble:new(
-        authorObj, message, color, timer, opacity, ISChat.instance.isVoiceEnabled, voicePitch, portrait)
+        authorObj, message, color, timer, opacity, voiceEnabled, voicePitch, portrait)
     ISChat.instance.bubble[author] = bubble
     -- the player is not typing anymore if his bubble appears
     if ISChat.instance.typingDots[author] ~= nil then
@@ -1038,7 +1038,9 @@ function ISChat.onMessagePacket(type, author, characterName, message, language, 
         if showLanguage and not LanguageManager:isKnown(language) then
             updatedMessage = LanguageManager:getRandomMessage(updatedMessage)
         end
-        CreatePlayerBubble(author, updatedMessage, BuildColorFromMessageType(type), voicePitch)
+        -- ooc should not distract the RP with voices
+        local voiceEnabled = ISChat.instance.isVoiceEnabled and type ~= 'ooc'
+        CreatePlayerBubble(author, updatedMessage, BuildColorFromMessageType(type), voiceEnabled, voicePitch)
     end
     local formattedMessage, parsedMessage = BuildMessageFromPacket(type, updatedMessage, name, color, nil, disableVerb)
     local time = Calendar.getInstance():getTimeInMillis()

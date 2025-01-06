@@ -198,6 +198,7 @@ local function SetMessageTypeSettings()
             ['enabled'] = SandboxVars.TICS.OutOfCharacterMessageEnabled,
             ['color'] = GetColorSandbox('OutOfCharacterMessage'),
             ['radio'] = false,
+            ['bubble'] = true,
         },
         ['server'] = {
             ['color'] = { 255, 86, 64 },
