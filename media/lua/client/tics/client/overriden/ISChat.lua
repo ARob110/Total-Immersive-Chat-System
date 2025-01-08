@@ -955,8 +955,9 @@ local function AddMessageToTab(tabID, language, time, formattedMessage, line, ch
     end
     chatText.text = ''
     local newText = ''
+    local chatTextLinesCount = #chatText.chatTextLines
     for i, v in ipairs(chatText.chatTextLines) do
-        if i == #chatText.chatTextLines then
+        if i == chatTextLinesCount then
             v = string.gsub(v, ' <LINE> $', '')
         end
         newText = newText .. v
@@ -964,7 +965,7 @@ local function AddMessageToTab(tabID, language, time, formattedMessage, line, ch
     chatText.text = newText
     chatText:paginate()
     if scrolledToBottom then
-        chatText:setYScroll(-10000)
+        chatText:scrollToBottom()
     end
 end
 
@@ -1211,8 +1212,9 @@ function ISChat.onRadioEmittingPacket(type, author, characterName, message, lang
     end
     local formattedMessage, parsedMessages = BuildMessageFromPacket(type, cleanMessage, name, color, frequency,
         disableVerb)
+    local showLanguage = TicsServerSettings and TicsServerSettings['options']['languages']
     local line = BuildChatMessage(ISChat.instance.chatFont, ISChat.instance.showTimestamp, ISChat.instance.showTitle,
-        formattedMessage, time, type)
+        showLanguage, language, formattedMessage, time, type)
     AddMessageToTab(stream['tabID'], language, time, formattedMessage, line, stream['name'])
 end
 
