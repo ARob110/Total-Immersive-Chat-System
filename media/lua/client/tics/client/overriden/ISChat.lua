@@ -1299,6 +1299,9 @@ function ISChat.onChatErrorPacket(type, message)
 end
 
 local function GetMessageType(message)
+    if message.toString == nil then
+        return nil
+    end
     local stringRep = message:toString()
     return stringRep:match('^ChatMessage{chat=(%a*),')
 end
@@ -1332,8 +1335,14 @@ ISChat.addLineInChat = function(message, tabID)
         ISChat.sendErrorToCurrentTab(message:getText())
         return
     end
-    local line = message:getText()
+
     local messageType = GetMessageType(message)
+    local line = message:getText()
+    if messageType == nil then
+        ISChat.sendInfoToCurrentTab(line)
+        return
+    end
+
     if message:getAuthor() == 'Server' then
         ISChat.sendInfoToCurrentTab(line)
     elseif message:getRadioChannel() ~= -1 then -- scripted radio message
