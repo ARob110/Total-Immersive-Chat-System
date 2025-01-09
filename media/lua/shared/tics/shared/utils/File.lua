@@ -65,6 +65,16 @@ function File.writeAllBytes(data, path)
     endFileOutput()
 end
 
+function File.writeStringWithNewLine(text, path)
+    local outFile = getFileWriter(path, true, true)
+    if outFile == nil then
+        print('TICS error: File.writeString: failed to write file in path: ' .. path)
+        return
+    end
+    outFile:writeln(text)
+    outFile:close()
+end
+
 function File.remove(path) -- we can only erase the bytes of the file, not the file
     File.writeAllBytes({}, path)
 end

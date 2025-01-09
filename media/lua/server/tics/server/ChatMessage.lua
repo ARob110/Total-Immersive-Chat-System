@@ -1,4 +1,5 @@
 local Character    = require('tics/shared/utils/Character')
+local Logger       = require('tics/server/Logger')
 local RadioManager = require('tics/server/radio/RadioManager')
 local ServerSend   = require('tics/server/network/ServerSend')
 local StringParser = require('tics/shared/utils/StringParser')
@@ -575,6 +576,11 @@ function ChatMessage.ProcessMessage(player, args, packetType, sendError)
     if packetType ~= 'Typing' then
         radioEmission, radioFrequencies = GetEmittingRadios(player, packetType, args['type'], range)
         SendRadioEmittingPackets(player, args, radioFrequencies)
+        local radiosFrequenciesList = {}
+        for frequency, _ in pairs(radioFrequencies) do
+            table.insert(radiosFrequenciesList, frequency)
+        end
+        Logger.LogChat(args.type, args.author, args.characterName, args.message, radiosFrequenciesList, args.target)
     end
     local connectedPlayers = getOnlinePlayers()
     for i = 0, connectedPlayers:size() - 1 do
