@@ -1,4 +1,4 @@
-Sandbox_RU = {
+UI_RU = {
     UI_TICS_chat_enable_voices  = "Включить голоса",
     UI_TICS_chat_disable_voices = "Выключить голоса",
     UI_TICS_enable_radio_icon   = "Показать иконку радио",

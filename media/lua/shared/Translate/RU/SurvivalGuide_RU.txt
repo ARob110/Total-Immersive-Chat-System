@@ -1,4 +1,4 @@
-SurvivalGuide_RU {
+SurvivalGuide_RU = {
     SurvivalGuide_TICS           = " <H1> яхярелю онкмнцн онцпсфемхъ б вюр <BR>" ..
                                    " <TEXT> <SIZE:medium>" ..
                                    " <CENTRE> %1 <BR>" ..

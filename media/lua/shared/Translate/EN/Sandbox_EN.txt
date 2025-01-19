@@ -1,4 +1,4 @@
-Sandbox_EN          = {
+Sandbox_EN = {
     Sandbox_TICS                                       = "Total Immersive Chat System",
     Sandbox_TICSChannels                               = "Total Immersive Chat System: Channels",
 

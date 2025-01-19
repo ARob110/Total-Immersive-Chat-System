@@ -1,4 +1,4 @@
-ContextMenu_EN {
+ContextMenu_EN = {
     ContextMenu_TICS_learn_language      = "Learn %1",
     ContextMenu_TICS_forget_languages    = "Forget languages",
 }
