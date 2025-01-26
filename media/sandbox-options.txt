@@ -327,6 +327,68 @@ option TICS.PrivateMessageColor
 	translation = TICS_PrivateMessageColor,
 }
 
+option TICS.MeEnabled
+{
+	type = boolean,
+	default = true,
+
+	page = TICSChannels,
+	translation = TICS_MeEnabled,
+}
+option TICS.MeRange
+{
+	type = integer,
+	min = 1,
+	max = 10000,
+	default = 30,
+
+	page = TICSChannels,
+	translation = TICS_MeRange,
+}
+option TICS.MeColor
+{
+	type = string,
+	default = #DFFDFF,
+
+	page = TICSChannels,
+	translation = TICS_MeColor,
+}
+
+option TICS.DoEnabled
+{
+	type = boolean,
+	default = true,
+
+	page = TICSChannels,
+	translation = TICS_DoEnabled,
+}
+option TICS.DoRange
+{
+	type = integer,
+	min = 1,
+	max = 10000,
+	default = 30,
+
+	page = TICSChannels,
+	translation = TICS_DoRange,
+}
+option TICS.DoColor
+{
+	type = string,
+	default = #E1DFFF,
+
+	page = TICSChannels,
+	translation = TICS_DoColor,
+}
+option TICS.DoAdminOnly
+{
+	type = boolean,
+	default = true,
+
+	page = TICSChannels,
+	translation = TICS_DoAdminOnly,
+}
+
 option TICS.FactionMessageEnabled
 {
 	type = boolean,

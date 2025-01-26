@@ -69,7 +69,7 @@ function RadioBubble:new(object, message, messageColor, timer, opacity, type, is
     setmetatable(RadioBubble, { __index = ABubble })
     local o = ABubble:new(
         x, y, parsedMessages['bubble'], parsedMessages['rawMessage'],
-        message, messageColor, timer, opacity, 20)
+        message, messageColor, timer, opacity, 20, true, false, nil, nil)
     if x == nil then
         self.dead = true
     end

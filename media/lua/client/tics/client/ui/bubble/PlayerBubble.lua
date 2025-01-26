@@ -3,21 +3,31 @@ local AvatarManager = require('tics/client/AvatarManager')
 local Character     = require('tics/shared/utils/Character')
 local Coordinates   = require('tics/client/utils/Coordinates')
 local Parser        = require('tics/client/parser/Parser')
+local StringBuilder = require('tics/client/parser/StringBuilder')
+
+local KeyboardSound = require('tics/client/voice/KeyboardSound')
 local PlayerVoice   = require('tics/client/voice/PlayerVoice')
 
 
 local PlayerBubble = ISUIElement:derive('PlayerBubble')
 
 function PlayerBubble:loadTextures()
+    if self.isContext then
+        self.bubbleTopLeft = getTexture('media/ui/tics/bubble/simple/bubble-top-left-square.png')
+        self.bubbleTopRight = getTexture('media/ui/tics/bubble/simple/bubble-top-right-square.png')
+        self.bubbleBotLeft = getTexture('media/ui/tics/bubble/simple/bubble-bot-left-square.png')
+        self.bubbleBotRight = getTexture('media/ui/tics/bubble/simple/bubble-bot-right-square.png')
+    else
+        self.bubbleTopLeft = getTexture('media/ui/tics/bubble/simple/bubble-top-left.png')
+        self.bubbleTopRight = getTexture('media/ui/tics/bubble/simple/bubble-top-right.png')
+        self.bubbleBotLeft = getTexture('media/ui/tics/bubble/simple/bubble-bot-left.png')
+        self.bubbleBotRight = getTexture('media/ui/tics/bubble/simple/bubble-bot-right.png')
+    end
     self.bubbleTop = getTexture('media/ui/tics/bubble/simple/bubble-top.png')
-    self.bubbleTopLeft = getTexture('media/ui/tics/bubble/simple/bubble-top-left.png')
-    self.bubbleTopRight = getTexture('media/ui/tics/bubble/simple/bubble-top-right.png')
     self.bubbleCenter = getTexture('media/ui/tics/bubble/simple/bubble-center.png')
     self.bubbleCenterLeft = getTexture('media/ui/tics/bubble/simple/bubble-left.png')
     self.bubbleCenterRight = getTexture('media/ui/tics/bubble/simple/bubble-right.png')
     self.bubbleBot = getTexture('media/ui/tics/bubble/simple/bubble-bot.png')
-    self.bubbleBotLeft = getTexture('media/ui/tics/bubble/simple/bubble-bot-left.png')
-    self.bubbleBotRight = getTexture('media/ui/tics/bubble/simple/bubble-bot-right.png')
     self.bubbleArrow = getTexture('media/ui/tics/bubble/simple/bubble-arrow.png')
 
     self.bubbleBotLeftSquare = getTexture('media/ui/tics/bubble/simple/bubble-bot-left-square.png')
@@ -108,9 +118,22 @@ function PlayerBubble:render()
     end
 end
 
-function PlayerBubble:new(player, message, messageColor, timer, opacity, isVoicesEnabled, voicePitch, portrait)
+local function BuildPlayerNameString(playerName, playerColor)
+    return StringBuilder.BuildBracketColorString(playerColor) .. playerName
+end
+
+function PlayerBubble:new(
+    player, isContext, message, messageColor, timer, opacity,
+    isVoicesEnabled, voicePitch, portrait,
+    showPlayerName, playerName, playerColor)
     local parsedMessages = Parser.ParseTicsMessage(message, messageColor, 20, 200)
-    local textLength = getTextManager():MeasureStringX(UIFont.medium, parsedMessages['rawMessage'])
+    local rawMessage = parsedMessages['rawMessage']
+    local bubbleMessage = parsedMessages['bubble']
+    if showPlayerName then
+        rawMessage = playerName .. ' ' .. rawMessage
+        bubbleMessage = BuildPlayerNameString(playerName, playerColor) .. ' ' .. bubbleMessage
+    end
+    local textLength = getTextManager():MeasureStringX(UIFont.medium, rawMessage)
     local width = math.min(textLength * 1.25, 162) + 40
     local height = 0
     local x, y = Coordinates.CenterTopOfPlayer(player, width, height)
@@ -119,16 +142,22 @@ function PlayerBubble:new(player, message, messageColor, timer, opacity, isVoice
     end
     PlayerBubble.__index = self
     setmetatable(PlayerBubble, { __index = ABubble })
+    local showArrow = not isContext
     local o = ABubble:new(
-        x, y, parsedMessages['bubble'], parsedMessages['rawMessage'],
-        message, messageColor, timer, opacity, 20)
+        x, y, bubbleMessage, rawMessage,
+        message, messageColor, timer, opacity, 20, showArrow, showPlayerName, playerName, playerColor)
     if x == nil then
         self.dead = true
     end
     setmetatable(o, PlayerBubble)
+    o.isContext = isContext
     o.player = player
     if isVoicesEnabled then
-        o.voice = PlayerVoice:new(parsedMessages['rawMessage'], player, voicePitch)
+        if isContext then
+            o.voice = KeyboardSound:new(rawMessage, player, voicePitch)
+        else
+            o.voice = PlayerVoice:new(rawMessage, player, voicePitch)
+        end
     end
     o.portrait = portrait
     return o

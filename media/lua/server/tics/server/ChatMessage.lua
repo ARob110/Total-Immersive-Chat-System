@@ -13,77 +13,6 @@ local function PlayersDistance(source, target)
     return math.floor(accurateDistance + 0.5)
 end
 
-local AuthorHasAccessByType = {
-    ['whisper']   = function(author, args, sendError) return true end,
-    ['low']       = function(author, args, sendError) return true end,
-
-    ['say']       = function(author, args, sendError) return true end,
-
-    ['yell']      = function(author, args, sendError) return true end,
-    ['pm']        = function(author, args, sendError)
-        if args.target == nil or World.getPlayerByUsername(args.target) == nil then
-            if args.target ~= nil then
-                if sendError then
-                    ServerSend.ChatErrorMessage(author, args.type, 'unknown player "' .. args.target .. '".')
-                end
-            else
-                print('TICS error: Received a private message from "' ..
-                    author:getUsername() .. '" without a contact name')
-            end
-            return false
-        end
-        return true
-    end,
-    ['faction']   = function(author, args, sendError)
-        local hasFaction = Faction.getPlayerFaction(author) ~= nil
-        if not hasFaction and sendError then
-            ServerSend.ChatErrorMessage(author, args.type, 'you are not part of a faction.')
-        end
-        return hasFaction
-    end,
-    ['safehouse'] = function(author, args, sendError)
-        local hasSafeHouse = SafeHouse.hasSafehouse(author) ~= nil
-        if not hasSafeHouse and sendError then
-            ServerSend.ChatErrorMessage(author, args.type, 'you are not part of a safe house.')
-        end
-        return hasSafeHouse
-    end,
-    ['general']   = function(author, args, sendError) return true end,
-    ['admin']     = function(author, args, sendError)
-        return author:getAccessLevel() == 'Admin'
-    end,
-    ['ooc']       = function(author, args, sendError) return true end,
-}
-
-local ListenerHasAccessByType = {
-    ['whisper']   = function(author, player, args) return true end,
-    ['low']       = function(author, player, args) return true end,
-
-    ['say']       = function(author, player, args) return true end,
-
-    ['yell']      = function(author, player, args) return true end,
-    ['pm']        = function(author, player, args)
-        return args.target ~= nil and args.author ~= nil and
-            (player:getUsername():lower() == args.target:lower() or player:getUsername():lower() == args.author:lower())
-    end,
-    ['faction']   = function(author, player, args)
-        local authorFaction = Faction.getPlayerFaction(author)
-        local playerFaction = Faction.getPlayerFaction(player)
-        return playerFaction ~= nil and authorFaction ~= nil and playerFaction:getName() == authorFaction:getName()
-    end,
-    ['safehouse'] = function(author, player, args)
-        local playerSafeHouse = SafeHouse.hasSafehouse(player)
-        local authorSafeHouse = SafeHouse.hasSafehouse(author)
-        return playerSafeHouse ~= nil and authorSafeHouse ~= nil and
-            playerSafeHouse:getTitle() == authorSafeHouse:getTitle()
-    end,
-    ['general']   = function(author, player, args) return true end,
-    ['admin']     = function(author, player, args)
-        return player:getAccessLevel() == 'Admin'
-    end,
-    ['ooc']       = function(author, player, args) return true end,
-}
-
 local function GetColorFromString(colorString)
     local defaultColor = { 255, 0, 255 }
     local rgb = StringParser.hexaStringToRGB(colorString)
@@ -155,6 +84,25 @@ local function SetMessageTypeSettings()
             ['radio'] = false,
             ['aliveOnly'] = true,
             ['bubble'] = false,
+        },
+        ['me'] = {
+            ['range'] = SandboxVars.TICS.MeRange,
+            ['zombieRange'] = 0,
+            ['enabled'] = SandboxVars.TICS.MeEnabled,
+            ['color'] = GetColorSandbox('Me'),
+            ['radio'] = false,
+            ['aliveOnly'] = true,
+            ['bubble'] = true,
+        },
+        ['do'] = {
+            ['range'] = SandboxVars.TICS.DoRange,
+            ['zombieRange'] = 0,
+            ['enabled'] = SandboxVars.TICS.DoEnabled,
+            ['color'] = GetColorSandbox('Do'),
+            ['radio'] = false,
+            ['aliveOnly'] = true,
+            ['bubble'] = true,
+            ['adminOnly'] = SandboxVars.TICS.DoAdminOnly,
         },
         ['faction'] = {
             ['range'] = -1,
@@ -228,13 +176,95 @@ local function SetMessageTypeSettings()
             ['portrait'] = SandboxVars.TICS.BubblePortrait,
         },
     }
-
-
-    ChatMessage.MessageTypeSettings['mesay']     = ChatMessage.MessageTypeSettings['say']
-    ChatMessage.MessageTypeSettings['mewhisper'] = ChatMessage.MessageTypeSettings['whisper']
-    ChatMessage.MessageTypeSettings['melow']     = ChatMessage.MessageTypeSettings['low']
-    ChatMessage.MessageTypeSettings['meyell']    = ChatMessage.MessageTypeSettings['yell']
 end
+
+local AuthorHasAccessByType = {
+    ['whisper']   = function(author, args, sendError) return true end,
+    ['low']       = function(author, args, sendError) return true end,
+
+    ['say']       = function(author, args, sendError) return true end,
+
+    ['yell']      = function(author, args, sendError) return true end,
+    ['pm']        = function(author, args, sendError)
+        if args.target == nil or World.getPlayerByUsername(args.target) == nil then
+            if args.target ~= nil then
+                if sendError then
+                    ServerSend.ChatErrorMessage(author, args.type, 'unknown player "' .. args.target .. '".')
+                end
+            else
+                print('TICS error: Received a private message from "' ..
+                    author:getUsername() .. '" without a contact name')
+            end
+            return false
+        end
+        return true
+    end,
+    ['faction']   = function(author, args, sendError)
+        local hasFaction = Faction.getPlayerFaction(author) ~= nil
+        if not hasFaction and sendError then
+            ServerSend.ChatErrorMessage(author, args.type, 'you are not part of a faction.')
+        end
+        return hasFaction
+    end,
+    ['safehouse'] = function(author, args, sendError)
+        local hasSafeHouse = SafeHouse.hasSafehouse(author) ~= nil
+        if not hasSafeHouse and sendError then
+            ServerSend.ChatErrorMessage(author, args.type, 'you are not part of a safe house.')
+        end
+        return hasSafeHouse
+    end,
+    ['general']   = function(author, args, sendError) return true end,
+    ['admin']     = function(author, args, sendError)
+        return author:getAccessLevel() == 'Admin'
+    end,
+    ['ooc']       = function(author, args, sendError) return true end,
+    ['me']        = function(author, args, sendError) return true end,
+    ['do']        = function(author, args, sendError)
+        if ChatMessage.MessageTypeSettings and
+            (not ChatMessage.MessageTypeSettings['do']['adminOnly'] or
+                author:getAccessLevel() == 'Admin' or
+                author:getAccessLevel() == 'Moderator')
+        then
+            return true
+        else
+            if sendError then
+                ServerSend.ChatErrorMessage(author, args.type, 'requires admin privileges.')
+            end
+            return false
+        end
+    end,
+}
+
+local ListenerHasAccessByType = {
+    ['whisper']   = function(author, player, args) return true end,
+    ['low']       = function(author, player, args) return true end,
+
+    ['say']       = function(author, player, args) return true end,
+
+    ['yell']      = function(author, player, args) return true end,
+    ['pm']        = function(author, player, args)
+        return args.target ~= nil and args.author ~= nil and
+            (player:getUsername():lower() == args.target:lower() or player:getUsername():lower() == args.author:lower())
+    end,
+    ['faction']   = function(author, player, args)
+        local authorFaction = Faction.getPlayerFaction(author)
+        local playerFaction = Faction.getPlayerFaction(player)
+        return playerFaction ~= nil and authorFaction ~= nil and playerFaction:getName() == authorFaction:getName()
+    end,
+    ['safehouse'] = function(author, player, args)
+        local playerSafeHouse = SafeHouse.hasSafehouse(player)
+        local authorSafeHouse = SafeHouse.hasSafehouse(author)
+        return playerSafeHouse ~= nil and authorSafeHouse ~= nil and
+            playerSafeHouse:getTitle() == authorSafeHouse:getTitle()
+    end,
+    ['general']   = function(author, player, args) return true end,
+    ['admin']     = function(author, player, args)
+        return player:getAccessLevel() == 'Admin'
+    end,
+    ['ooc']       = function(author, player, args) return true end,
+    ['me']        = function(author, args, sendError) return true end,
+    ['do']        = function(author, args, sendError) return true end,
+}
 
 local SandboxVarsCopy = nil
 local function CopyTicsSandboxVars()
@@ -296,6 +326,10 @@ end
 local function IsAllowedToTalk(author, args, sendError)
     if args.type == nil then
         print('TICS error: args.type is null')
+        return false
+    end
+    if AuthorHasAccessByType[args.type] == nil then
+        print('TICS error: AuthorHasAccessByType has no method for type ' .. args.type)
         return false
     end
     if ChatMessage.MessageTypeSettings[args.type] == nil then
@@ -545,11 +579,6 @@ end
 function ChatMessage.ProcessMessage(player, args, packetType, sendError)
     if args.type == nil then
         print('TICS error: Received a message from "' .. player:getUsername() .. '" with no type')
-        return
-    end
-
-    if AuthorHasAccessByType[args.type] == nil then
-        print('TICS error: AuthorHasAccessByType has no method for type ' .. args.type)
         return
     end
 

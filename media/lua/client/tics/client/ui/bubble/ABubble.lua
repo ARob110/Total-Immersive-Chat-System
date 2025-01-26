@@ -26,6 +26,32 @@ local function Lerp(start, target, progression)
     return start + distance
 end
 
+local function BuildPlayerNameString(playerName, playerColor)
+    return StringBuilder.BuildBracketColorString(playerColor) .. playerName
+end
+
+function ABubble:parseMessage(length)
+    local messageLength = length
+    if length and self.showPlayerName and self.playerName then
+        local nameLength = length and (#self.playerName + 1) or nil -- + 1 for the trailing space
+        messageLength = length - nameLength
+        if messageLength < 0 then
+            messageLength = 0
+        end
+    end
+    local parsedMessages = Parser.ParseTicsMessage(self.message, self.color, 20, messageLength)
+    local rawMessage = parsedMessages['rawMessage']
+    local bubbleMessage = parsedMessages['bubble']
+    if self.showPlayerName then
+        local nameLength = length and (#self.playerName + 1) or nil -- + 1 for the trailing space
+        local truncatedName = self.playerName .. ' '
+        truncatedName = length >= nameLength and truncatedName or truncatedName:sub(1, length)
+        rawMessage = truncatedName .. rawMessage
+        bubbleMessage = BuildPlayerNameString(truncatedName, self.playerColor) .. ' ' .. bubbleMessage
+    end
+    return rawMessage, bubbleMessage
+end
+
 function ABubble:updateText(x, y)
     local time = Calendar.getInstance():getTimeInMillis()
     local elapsedTime = time - self.startTime
@@ -43,9 +69,9 @@ function ABubble:updateText(x, y)
     else
         self.messageFinishedScrolling = true
     end
-    local parsedMessages = Parser.ParseTicsMessage(self.message, self.color, 20, length)
-    self.text = StringBuilder.BuildFontSizeString('medium') .. parsedMessages['bubble']
-    self.rawText = parsedMessages['rawMessage']
+    local rawMessage, bubbleMessage = self:parseMessage(length)
+    self.text = StringBuilder.BuildFontSizeString('medium') .. bubbleMessage
+    self.rawText = rawMessage
     self:paginate()
 
     if self.voice then
@@ -122,7 +148,7 @@ function ABubble:drawBubble()
     self:drawTextureScaled(self.bubbleBot, centerX, botY, centerW, botH, self.alpha)
     self:drawTextureScaled(self.bubbleBotRight, rightX, botY, rightW, botH, self.alpha)
 
-    if self.currentX > 0 and self.currentY > self.topSpace
+    if self.showArrow and self.currentX > 0 and self.currentY > self.topSpace
         and self.currentX + self:getWidth() < getCore():getScreenWidth()
         and self.currentY + self:getHeight() < getCore():getScreenHeight()
     then
@@ -152,7 +178,9 @@ function ABubble:setY(y)
     end
 end
 
-function ABubble:new(x, y, text, rawText, message, messageColor, timer, opacity, heightOffsetStart)
+function ABubble:new(
+    x, y, text, rawText, message, messageColor, timer, opacity, heightOffsetStart,
+    showArrow, showPlayerName, playerName, playerColor)
     local textLength = getTextManager():MeasureStringX(UIFont.medium, rawText)
     local width = math.min(textLength * 1.25, 162) + 40
     local height = 0
@@ -187,6 +215,10 @@ function ABubble:new(x, y, text, rawText, message, messageColor, timer, opacity,
     o.currentProgression = 0
     o.heightOffsetStart = heightOffsetStart
     o.heightOffset = heightOffsetStart
+    o.showArrow = showArrow
+    o.showPlayerName = showPlayerName
+    o.playerName = playerName
+    o.playerColor = playerColor
     o.subscribed = false
     o.defaultWidth = width
     o.alpha = o.opacity

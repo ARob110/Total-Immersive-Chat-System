@@ -35,13 +35,8 @@ ISChat.allChatStreams[8]  = { name = 'scriptedRadio', command = nil, shortComman
 ISChat.allChatStreams[9]  = { name = 'ooc', command = '/ooc ', shortCommand = '/o ', tabID = 2 }
 ISChat.allChatStreams[10] = { name = 'pm', command = '/pm ', shortCommand = '/p ', tabID = 3 }
 ISChat.allChatStreams[11] = { name = 'admin', command = '/admin ', shortCommand = '/a ', tabID = 4 }
-
-
-ISChat.noVerbStreams    = {}
-ISChat.noVerbStreams[1] = { name = 'mesay', command = '/me ', shortCommand = '/ms ', tabID = 1, forget = true }
-ISChat.noVerbStreams[2] = { name = 'mewhisper', command = '/mewhisper ', shortCommand = '/mw ', tabID = 1, forget = true }
-ISChat.noVerbStreams[3] = { name = 'melow', command = '/melow ', shortCommand = '/ml ', tabID = 1, forget = true }
-ISChat.noVerbStreams[4] = { name = 'meyell', command = '/meyell ', shortCommand = '/my ', tabID = 1, forget = true }
+ISChat.allChatStreams[12] = { name = 'me', command = '/me ', shortCommand = nil, tabID = 1, forget = true }
+ISChat.allChatStreams[13] = { name = 'do', command = '/do ', shortCommand = nil, tabID = 1, forget = true }
 
 
 ISChat.ticsCommand    = {}
@@ -83,13 +78,6 @@ local function GetCommandFromMessage(command)
             return stream, stream.command, false
         elseif stream.shortCommand and luautils.stringStarts(command, stream.shortCommand) then
             return stream, stream.shortCommand, false
-        end
-    end
-    for _, stream in ipairs(ISChat.noVerbStreams) do
-        if stream.command and luautils.stringStarts(command, stream.command) then
-            return stream, stream.command
-        elseif stream.shortCommand and luautils.stringStarts(command, stream.shortCommand) then
-            return stream, stream.shortCommand
         end
     end
     return nil
@@ -375,14 +363,10 @@ local function ProcessChatCommand(stream, command)
         ClientSend.sendChatMessage(command, language, playerColor, 'low', pitch, false)
     elseif stream.name == 'whisper' then
         ClientSend.sendChatMessage(command, language, playerColor, 'whisper', pitch, false)
-    elseif stream.name == 'meyell' then
-        ClientSend.sendChatMessage(command, language, playerColor, 'yell', pitch, true)
-    elseif stream.name == 'mesay' then
-        ClientSend.sendChatMessage(command, language, playerColor, 'say', pitch, true)
-    elseif stream.name == 'melow' then
-        ClientSend.sendChatMessage(command, language, playerColor, 'low', pitch, true)
-    elseif stream.name == 'mewhisper' then
-        ClientSend.sendChatMessage(command, language, playerColor, 'whisper', pitch, true)
+    elseif stream.name == 'me' then
+        ClientSend.sendChatMessage(command, language, playerColor, 'me', pitch, true)
+    elseif stream.name == 'do' then
+        ClientSend.sendChatMessage(command, language, playerColor, 'do', pitch, true)
     elseif stream.name == 'pm' then
         local targetStart, targetEnd = command:find('^%s*"%a+%s?%a+"')
         if targetStart == nil then
@@ -732,6 +716,10 @@ function BuildQuote(type)
     return '"'
 end
 
+local function BuildPlayerNameString(playerName, playerColor)
+    return StringBuilder.BuildBracketColorString(playerColor) .. playerName
+end
+
 function BuildMessageFromPacket(type, message, name, playerColor, frequency, disableVerb)
     local messageColor = BuildColorFromMessageType(type)
     local parsedMessage = Parser.ParseTicsMessage(message, messageColor, 20, 200)
@@ -742,7 +730,9 @@ function BuildMessageFromPacket(type, message, name, playerColor, frequency, dis
     local messageColorString = StringBuilder.BuildBracketColorString(messageColor)
     local quote
     local verbString
-    if not disableVerb and (TicsServerSettings == nil or TicsServerSettings['options']['verb'] == true) then
+    if not disableVerb and (TicsServerSettings == nil or TicsServerSettings['options']['verb'] == true)
+        and type ~= 'do' and type ~= 'me'
+    then
         quote = BuildQuote(type)
         verbString = BuildVerbString(type)
     else
@@ -750,8 +740,13 @@ function BuildMessageFromPacket(type, message, name, playerColor, frequency, dis
         verbString = ' '
     end
     local formatedMessage = ''
-    if name ~= nil then
-        formatedMessage = formatedMessage .. StringBuilder.BuildBracketColorString(playerColor) .. name
+    if type == 'do' then
+        formatedMessage = formatedMessage .. '** '
+    elseif type == 'me' then
+        formatedMessage = formatedMessage .. '* '
+    end
+    if name ~= nil and type ~= 'do' then
+        formatedMessage = formatedMessage .. BuildPlayerNameString(name, playerColor)
     end
     formatedMessage = formatedMessage ..
         StringBuilder.BuildBracketColorString({ 150, 150, 150 }) ..
@@ -776,7 +771,8 @@ function BuildChatMessage(fontSize, showTimestamp, showTitle, showLanguage, lang
     return line
 end
 
-function CreatePlayerBubble(author, message, color, voiceEnabled, voicePitch)
+function CreatePlayerBubble(author, type, message, color, voiceEnabled, voicePitch, showPlayerName, authorName,
+                            authorColor)
     ISChat.instance.bubble = ISChat.instance.bubble or {}
     ISChat.instance.typingDots = ISChat.instance.typingDots or {}
     if author == nil then
@@ -796,8 +792,10 @@ function CreatePlayerBubble(author, message, color, voiceEnabled, voicePitch)
     end
     local portrait = (TicsServerSettings and ISChat.instance.isPortraitEnabled and TicsServerSettings['options']['portrait'])
         or 1
+    local isContext = type == 'me'
     local bubble = PlayerBubble:new(
-        authorObj, message, color, timer, opacity, voiceEnabled, voicePitch, portrait)
+        authorObj, isContext, message, color, timer, opacity, voiceEnabled, voicePitch, portrait, showPlayerName,
+        authorName, authorColor)
     ISChat.instance.bubble[author] = bubble
     -- the player is not typing anymore if his bubble appears
     if ISChat.instance.typingDots[author] ~= nil then
@@ -1035,13 +1033,14 @@ function ISChat.onMessagePacket(type, author, characterName, message, language, 
     ISChat.instance.chatFont = ISChat.instance.chatFont or 'medium'
     local showLanguage = TicsServerSettings and TicsServerSettings['options']['languages']
     local showBubble = TicsServerSettings and TicsServerSettings[type] and TicsServerSettings[type]['bubble']
-    if not isFromDiscord and voicePitch ~= nil and showBubble then
-        if showLanguage and not LanguageManager:isKnown(language) then
+    if not isFromDiscord and voicePitch ~= nil and showBubble and type ~= 'do' then
+        if showLanguage and not LanguageManager:isKnown(language) and type ~= 'me' and type ~= 'do' then
             updatedMessage = LanguageManager:getRandomMessage(updatedMessage)
         end
         -- ooc should not distract the RP with voices
         local voiceEnabled = ISChat.instance.isVoiceEnabled and type ~= 'ooc'
-        CreatePlayerBubble(author, updatedMessage, BuildColorFromMessageType(type), voiceEnabled, voicePitch)
+        CreatePlayerBubble(author, type, updatedMessage, BuildColorFromMessageType(type), voiceEnabled, voicePitch,
+            type == 'me', name, color)
     end
     local formattedMessage, parsedMessage = BuildMessageFromPacket(type, updatedMessage, name, color, nil, disableVerb)
     local time = Calendar.getInstance():getTimeInMillis()
@@ -1556,18 +1555,6 @@ function ISChat.onTextChange()
             ISChat.lastTabStream[ISChat.instance.currentTabID] = stream
         end
         local streamName = stream['name']
-        if streamName == 'mesay' then
-            streamName = 'say'
-        end
-        if streamName == 'melow' then
-            streamName = 'low'
-        end
-        if streamName == 'mewhisper' then
-            streamName = 'whisper'
-        end
-        if streamName == 'meyell' then
-            streamName = 'yell'
-        end
         ClientSend.sendTyping(getPlayer():getUsername(), streamName)
     else
         if ISChat.instance.rangeIndicator then
@@ -1655,26 +1642,20 @@ local function UpdateInfoWindow()
     if TicsServerSettings['whisper']['enabled'] then
         info = info .. getText('SurvivalGuide_TICS_Whisper')
     end
-    if TicsServerSettings['whisper']['enabled'] and TicsServerSettings['options']['verb'] then
-        info = info .. getText('SurvivalGuide_TICS_MeWhisper')
-    end
     if TicsServerSettings['low']['enabled'] then
         info = info .. getText('SurvivalGuide_TICS_Low')
-    end
-    if TicsServerSettings['low']['enabled'] and TicsServerSettings['options']['verb'] then
-        info = info .. getText('SurvivalGuide_TICS_MeLow')
     end
     if TicsServerSettings['say']['enabled'] then
         info = info .. getText('SurvivalGuide_TICS_Say')
     end
-    if TicsServerSettings['say']['enabled'] and TicsServerSettings['options']['verb'] then
-        info = info .. getText('SurvivalGuide_TICS_MeSay')
-    end
     if TicsServerSettings['yell']['enabled'] then
         info = info .. getText('SurvivalGuide_TICS_Yell')
     end
-    if TicsServerSettings['yell']['enabled'] and TicsServerSettings['options']['verb'] then
-        info = info .. getText('SurvivalGuide_TICS_MeYell')
+    if TicsServerSettings['me']['enabled'] then
+        info = info .. getText('SurvivalGuide_TICS_Me')
+    end
+    if TicsServerSettings['do']['enabled'] and not TicsServerSettings['do']['adminOnly'] then
+        info = info .. getText('SurvivalGuide_TICS_Do')
     end
     if TicsServerSettings['pm']['enabled'] then
         info = info .. getText('SurvivalGuide_TICS_Pm')
