@@ -1411,7 +1411,6 @@ end
 
 -- TODO: try to clean this mess copied from the base game
 ISChat.addLineInChat = function(message, tabID)
-    print("DEBUG TICS: Raw message line received in addLineInChat:", message:getTextWithPrefix())
     if UdderlyUpToDate and
         message.setOverHeadSpeech == nil and
         message.isFromDiscord == nil and
